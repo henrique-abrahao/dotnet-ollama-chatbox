@@ -1,6 +1,8 @@
-﻿using System.Reflection;
+using System.Reflection;
+using ChatAppAI.Configuration;
 using ChatAppAI.Services;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using OllamaSharp;
 
@@ -29,13 +31,18 @@ builder.Services.AddSwaggerGen(options =>
     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
 });
 
-IChatClient chatClient = new OllamaApiClient(
-    new Uri("http://localhost:11434"),
-    "llama3.2");
+// Configure Ollama options from appsettings.json
+builder.Services.Configure<OllamaOptions>(
+    builder.Configuration.GetSection("Ollama"));
 
-builder.Services.AddSingleton(chatClient);
+// Register IChatClient using configured options
+builder.Services.AddSingleton<IChatClient>(sp =>
+{
+    var options = sp.GetRequiredService<IOptions<OllamaOptions>>().Value;
+    return new OllamaApiClient(new Uri(options.BaseUrl), options.Model);
+});
 
-builder.Services.AddSingleton<ConversationStore>();
+builder.Services.AddSingleton<IConversationStore, ConversationStore>();
 
 builder.Services.AddScoped<IChatService, ChatService>();
 
