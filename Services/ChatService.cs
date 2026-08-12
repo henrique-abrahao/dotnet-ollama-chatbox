@@ -8,12 +8,12 @@ namespace ChatAppAI.Services;
 public class ChatService : IChatService
 {
     private readonly IChatClient _chatClient;
-    private readonly ConversationStore _conversationStore;
+    private readonly IConversationStore _conversationStore;
     private readonly string _systemPrompt;
 
     public ChatService(
         IChatClient chatClient,
-        ConversationStore conversationStore,
+        IConversationStore conversationStore,
         IOptions<OllamaOptions> options)
     {
         _chatClient = chatClient;
