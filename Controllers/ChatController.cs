@@ -24,16 +24,18 @@ public class ChatController : ControllerBase
     }
 
     [HttpPost("stream")]
-    public async Task Stream(ChatApiRequest request)
+    public async Task Stream(
+        [FromBody] ChatApiRequest request,
+        CancellationToken cancellationToken)
     {
         Response.ContentType = "text/plain";
 
         await foreach (
-            var chunk in _chatService.StreamMessageAsync(request))
+            var chunk in _chatService.StreamMessageAsync(request, cancellationToken))
         {
-            await Response.WriteAsync(chunk);
+            await Response.WriteAsync(chunk, cancellationToken);
 
-            await Response.Body.FlushAsync();
+            await Response.Body.FlushAsync(cancellationToken);
         }
     }
 
