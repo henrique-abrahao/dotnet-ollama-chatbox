@@ -19,7 +19,7 @@ builder.Services.AddSingleton<IChatClient>(sp =>
     return new OllamaApiClient(new Uri(options.BaseUrl), options.Model);
 });
 
-builder.Services.AddSingleton<ConversationStore>();
+builder.Services.AddSingleton<IConversationStore, ConversationStore>();
 
 builder.Services.AddScoped<IChatService, ChatService>();
 
