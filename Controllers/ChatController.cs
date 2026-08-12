@@ -25,9 +25,9 @@ public class ChatController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(ChatApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Post([FromBody] ChatApiRequest request)
+    public async Task<IActionResult> Post([FromBody] ChatApiRequest request, CancellationToken cancellationToken)
     {
-        var response = await _chatService.SendMessageAsync(request);
+        var response = await _chatService.SendMessageAsync(request, cancellationToken);
 
         return Ok(response);
     }
@@ -41,16 +41,18 @@ public class ChatController : ControllerBase
     [HttpPost("stream")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task Stream([FromBody] ChatApiRequest request)
+    public async Task Stream(
+        [FromBody] ChatApiRequest request,
+        CancellationToken cancellationToken)
     {
         Response.ContentType = "text/plain";
 
         await foreach (
-            var chunk in _chatService.StreamMessageAsync(request))
+            var chunk in _chatService.StreamMessageAsync(request, cancellationToken))
         {
-            await Response.WriteAsync(chunk);
+            await Response.WriteAsync(chunk, cancellationToken);
 
-            await Response.Body.FlushAsync();
+            await Response.Body.FlushAsync(cancellationToken);
         }
     }
 
