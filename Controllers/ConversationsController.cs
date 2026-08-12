@@ -8,9 +8,9 @@ namespace ChatAppAI.Controllers;
 [Route("api/[controller]")]
 public class ConversationsController : ControllerBase
 {
-    private readonly ConversationStore _conversationStore;
+    private readonly IConversationStore _conversationStore;
 
-    public ConversationsController(ConversationStore conversationStore)
+    public ConversationsController(IConversationStore conversationStore)
     {
         _conversationStore = conversationStore;
     }
