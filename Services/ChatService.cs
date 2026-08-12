@@ -1,5 +1,7 @@
+using ChatAppAI.Configuration;
 using ChatAppAI.Models;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Options;
 
 namespace ChatAppAI.Services;
 
@@ -7,13 +9,16 @@ public class ChatService : IChatService
 {
     private readonly IChatClient _chatClient;
     private readonly ConversationStore _conversationStore;
+    private readonly string _systemPrompt;
 
     public ChatService(
         IChatClient chatClient,
-        ConversationStore conversationStore)
+        ConversationStore conversationStore,
+        IOptions<OllamaOptions> options)
     {
         _chatClient = chatClient;
         _conversationStore = conversationStore;
+        _systemPrompt = options.Value.SystemPrompt;
     }
 
     public Conversation? GetConversation(string conversationId)
@@ -30,26 +35,10 @@ public class ChatService : IChatService
         var conversation =
             _conversationStore.GetOrCreate(conversationId);
 
-        if (conversation.Messages.Count == 0)
+        if (conversation.Messages.Count == 0 && !string.IsNullOrWhiteSpace(_systemPrompt))
         {
             conversation.Messages.Add(
-                new ChatMessage(ChatRole.System, """
-                    You are a friendly hiking enthusiast who helps people discover fun hikes in their area.
-
-                    You introduce yourself when first saying hello.
-
-                    When helping people out, you always ask them for this information:
-
-                    1. The location where they would like to hike
-                    2. What hiking intensity they are looking for
-
-                    You will then provide three suggestions for nearby hikes that vary in length.
-
-                    You will also share an interesting fact about the local nature
-                    when making a recommendation.
-
-                    At the end of your response, ask if there is anything else you can help with.
-                    """)
+                new ChatMessage(ChatRole.System, _systemPrompt)
             );
         }
 
@@ -89,26 +78,10 @@ public class ChatService : IChatService
         var conversation =
             _conversationStore.GetOrCreate(conversationId);
 
-        if (conversation.Messages.Count == 0)
+        if (conversation.Messages.Count == 0 && !string.IsNullOrWhiteSpace(_systemPrompt))
         {
             conversation.Messages.Add(
-                new ChatMessage(ChatRole.System, """
-                You are a friendly hiking enthusiast who helps people discover fun hikes in their area.
-
-                You introduce yourself when first saying hello.
-
-                When helping people out, you always ask them for this information:
-
-                1. The location where they would like to hike
-                2. What hiking intensity they are looking for
-
-                You will then provide three suggestions for nearby hikes that vary in length.
-
-                You will also share an interesting fact about the local nature
-                when making a recommendation.
-
-                At the end of your response, ask if there is anything else you can help with.
-                """)
+                new ChatMessage(ChatRole.System, _systemPrompt)
             );
         }
 
