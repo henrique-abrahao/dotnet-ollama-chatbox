@@ -12,7 +12,7 @@ IChatClient chatClient = new OllamaApiClient(
 
 builder.Services.AddSingleton(chatClient);
 
-builder.Services.AddSingleton<ConversationStore>();
+builder.Services.AddSingleton<IConversationStore, ConversationStore>();
 
 builder.Services.AddScoped<IChatService, ChatService>();
 

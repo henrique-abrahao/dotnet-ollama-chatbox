@@ -6,11 +6,11 @@ namespace ChatAppAI.Services;
 public class ChatService : IChatService
 {
     private readonly IChatClient _chatClient;
-    private readonly ConversationStore _conversationStore;
+    private readonly IConversationStore _conversationStore;
 
     public ChatService(
         IChatClient chatClient,
-        ConversationStore conversationStore)
+        IConversationStore conversationStore)
     {
         _chatClient = chatClient;
         _conversationStore = conversationStore;
