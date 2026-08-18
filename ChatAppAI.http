@@ -1,0 +1,175 @@
+### =====================================================================
+###  Ollama Chatbox API - Arquivo de testes de endpoints
+###  Uso: VS Code (extensão REST Client), Visual Studio ou JetBrains Rider
+###  Basta clicar em "Send Request" acima de cada requisição.
+### =====================================================================
+
+@host = http://localhost:5080
+@contentType = application/json
+
+### ---------------------------------------------------------------------
+### 1. HEALTH CHECK
+### ---------------------------------------------------------------------
+
+### 1.1 Verificar saúde da API + Ollama
+### Esperado (Ollama rodando):  200 OK  { api: "Healthy", ollama: "Healthy" }
+### Esperado (Ollama parado):   503     { api: "Healthy", ollama: "Unavailable" }
+GET {{host}}/api/health
+
+### ---------------------------------------------------------------------
+### 2. CHAT - RESPOSTA COMPLETA (POST /api/chat)
+### ---------------------------------------------------------------------
+
+### 2.1 Enviar mensagem (nova conversa - ID gerado automaticamente)
+### Esperado: 200 OK  { conversationId: "<guid>", message: "<resposta IA>" }
+POST {{host}}/api/chat
+Content-Type: {{contentType}}
+
+{
+  "message": "Olá! Pode me ajudar a encontrar trilhas?"
+}
+
+### 2.2 Enviar mensagem com conversationId fixo (para testar contexto)
+### Esperado: 200 OK  { conversationId: "conv-demo-01", message: "..." }
+POST {{host}}/api/chat
+Content-Type: {{contentType}}
+
+{
+  "message": "Quero uma trilha perto de Denver, intensidade moderada.",
+  "conversationId": "conv-demo-01"
+}
+
+### 2.3 Segunda mensagem na MESMA conversa (deve lembrar o contexto)
+### Esperado: 200 OK - resposta considera a mensagem anterior
+POST {{host}}/api/chat
+Content-Type: {{contentType}}
+
+{
+  "message": "E qual delas é a mais curta?",
+  "conversationId": "conv-demo-01"
+}
+
+### ---------------------------------------------------------------------
+### 3. CHAT - STREAMING (POST /api/chat/stream)
+### ---------------------------------------------------------------------
+
+### 3.1 Resposta em streaming (texto chega em pedaços - text/plain)
+### Esperado: 200 OK - corpo com o texto transmitido progressivamente
+POST {{host}}/api/chat/stream
+Content-Type: {{contentType}}
+
+{
+  "message": "Conte de 1 a 5.",
+  "conversationId": "conv-stream-01"
+}
+
+### ---------------------------------------------------------------------
+### 4. CHAT - HISTÓRICO (GET /api/chat/{conversationId})
+### ---------------------------------------------------------------------
+
+### 4.1 Recuperar histórico de uma conversa existente
+### Esperado: 200 OK - objeto Conversation com lista de mensagens
+GET {{host}}/api/chat/conv-demo-01
+
+### 4.2 Recuperar histórico de conversa inexistente
+### Esperado: 404 Not Found
+GET {{host}}/api/chat/nao-existe-999
+
+### ---------------------------------------------------------------------
+### 5. GERENCIAMENTO DE CONVERSAS (/api/conversations)
+### ---------------------------------------------------------------------
+
+### 5.1 Listar todas as conversas
+### Esperado: 200 OK - array de conversas (pode ser [] se nenhuma criada)
+GET {{host}}/api/conversations
+
+### 5.2 Obter conversa específica por ID
+### Esperado: 200 OK (se existe) | 404 { message: "Conversa '...' não encontrada." }
+GET {{host}}/api/conversations/conv-demo-01
+
+### 5.3 Obter conversa inexistente
+### Esperado: 404 Not Found { message: "Conversa 'xyz' não encontrada." }
+GET {{host}}/api/conversations/xyz
+
+### 5.4 Deletar conversa existente
+### Esperado: 204 No Content
+DELETE {{host}}/api/conversations/conv-demo-01
+
+### 5.5 Deletar conversa inexistente
+### Esperado: 404 Not Found { message: "Conversa 'xyz' não encontrada." }
+DELETE {{host}}/api/conversations/xyz
+
+### ---------------------------------------------------------------------
+### 6. VALIDAÇÃO DE ENTRADA (casos de erro esperados)
+### ---------------------------------------------------------------------
+
+### 6.1 Mensagem vazia
+### Esperado: 400 Bad Request - "A mensagem é obrigatória."
+POST {{host}}/api/chat
+Content-Type: {{contentType}}
+
+{
+  "message": ""
+}
+
+### 6.2 Campo "message" ausente
+### Esperado: 400 Bad Request
+POST {{host}}/api/chat
+Content-Type: {{contentType}}
+
+{
+  "conversationId": "abc"
+}
+
+### 6.3 Mensagem acima de 4000 caracteres
+### Esperado: 400 Bad Request - "A mensagem deve ter entre 1 e 4000 caracteres."
+### (cole uma string com mais de 4000 caracteres no campo message)
+POST {{host}}/api/chat
+Content-Type: {{contentType}}
+
+{
+  "message": "aaaaaaaaaa... (repita para passar de 4000 chars)"
+}
+
+### 6.4 conversationId acima de 100 caracteres
+### Esperado: 400 Bad Request - "O ID da conversa não pode exceder 100 caracteres."
+POST {{host}}/api/chat
+Content-Type: {{contentType}}
+
+{
+  "message": "teste",
+  "conversationId": "conversationId-muito-longo-repetido-conversationId-muito-longo-repetido-conversationId-muito-longo-XXXX"
+}
+
+### 6.5 JSON malformado
+### Esperado: 400 Bad Request
+POST {{host}}/api/chat
+Content-Type: {{contentType}}
+
+{ "message": "faltando aspas }
+
+### ---------------------------------------------------------------------
+### 7. TRATAMENTO GLOBAL DE ERROS (com Ollama PARADO)
+### ---------------------------------------------------------------------
+
+### 7.1 Chamar chat com Ollama indisponível
+### Esperado: 502 Bad Gateway (ProblemDetails RFC 7807)
+### { title: "Serviço de IA Indisponível", status: 502, detail: "...", instance: "/api/chat" }
+POST {{host}}/api/chat
+Content-Type: {{contentType}}
+
+{
+  "message": "Isto deve retornar 502 se o Ollama estiver parado"
+}
+
+### ---------------------------------------------------------------------
+### 8. DOCUMENTAÇÃO SWAGGER
+### ---------------------------------------------------------------------
+
+### 8.1 Especificação OpenAPI (JSON)
+### Esperado: 200 OK - documento OpenAPI
+GET {{host}}/swagger/v1/swagger.json
+
+### 8.2 Swagger UI (abrir no navegador, ambiente Development)
+### Esperado: página da UI do Swagger na raiz
+GET {{host}}/
